@@ -4,5 +4,5 @@ blocklandLaunch
 python blockland updater
 
 command line:  
--p  :  blockland install directory
+-p  :  blockland install directory  
 -i  :  don't ask to update
