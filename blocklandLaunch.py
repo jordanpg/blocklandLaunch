@@ -1,5 +1,6 @@
 import socket, argparse, os, hashlib, os.path, urllib
 
+
 def recv(sock, size):
 	buffer = []
 	curr = 0
@@ -87,10 +88,14 @@ class Launcher:
 					self.update.append(i)
 
 	def grabFiles(self):
-		if len(self.update) == 0:
+		total = len(self.update)
+		if total == 0:
 			return
 
-		print "Downloading update list..."
+		strtotal = str(total)
+		fltotal = float(total)
+		j = 1
+		print "Downloading " + strtotal + " files..."
 		for i in self.update:
 			l = i.split('\t')
 			if len(l) < 2:
@@ -98,17 +103,21 @@ class Launcher:
 			name = l[0]
 			hash = l[1]
 
-			print "RETRIEVING FILE: " + name + " ..."
+			perc = (float(j) / fltotal) * 100
+			print "%-12s %-52s %7s" % ("[" + str(j) + "/" + strtotal + "]", name, "%0.2f" % perc + "%")
 			path = self.dir + name
 			dirname = os.path.dirname(path)
 			if not os.path.exists(dirname):
 				os.makedirs(dirname)
 			urllib.urlretrieve(self.download + '/' + hash, path)
 
+			j += 1
+
 
 def launcher(argv):
 	path = argv.p
 	ignore = argv.i
+	check = argv.c
 
 	if path == None:
 		path = os.getcwd() + '/Blockland'
@@ -118,23 +127,35 @@ def launcher(argv):
 	launch = Launcher(path)
 	launch.generateUpdateList()
 
-	if len(launch.update) > 0:
-		if not ignore:
-			r = raw_input("Are you sure you want to update " + str(len(launch.update)) + " files? (y/n)\t")
+	updates = len(launch.update)
+	strupdates = str(updates)
 
-			if r != 'y' and r != 'Y':
-				return
+	if not check:
+		if updates > 0:
+			if not ignore:
+				r = raw_input("\nAre you sure you want to update " + strupdates + " files? (y/n)\t")
 
-		launch.grabFiles()
-		print "Updated " + str(len(launch.update)) + " files."
+				if r != 'y' and r != 'Y':
+					return
+
+			launch.grabFiles()
+			print "Updated " + strupdates + " files."
+		else:
+			print "\nAll files are already up-to-date."
 	else:
-		print "All files are already up-to-date."
+		if updates > 0:
+			print "\nUpdates are available for installation at " + path
+			print strupdates + " files out-of-date or missing"
+		else:
+			print "\nInstallation at " + path + " is up-to-date"
+
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Blockland Custom Launcher")
 	parser.add_argument('-p', metavar='P', help='Blockland install directory', required=False)
-	parser.add_argument('-i', help='Don\'t ask to update', required=False, action="store_true")
+	parser.add_argument('-i', help='Don\'t ask to confirm updates', required=False, action="store_true")
+	parser.add_argument('-c', help='Don\'t update, just check', required=False, action="store_true")
 
 	argv = parser.parse_args()
 	launcher(argv)
